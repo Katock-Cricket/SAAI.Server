@@ -6,16 +6,11 @@ import torch.nn.functional as F
 
 from modules.F0Predictor.F0Predictor import F0Predictor
 
-from .fcpe.model import FCPEInfer
-
-static_fcpe = FCPEInfer(model_path="./SAAI.Server/pretrain/fcpe.pt", device="cpu", dtype=torch.float32)
-print("preload fcpe")
-
 
 class FCPEF0Predictor(F0Predictor):
-    def __init__(self, hop_length=512, f0_min=50, f0_max=1100, dtype=torch.float32, device=None, sampling_rate=44100,
+    def __init__(self, f0_predictor, hop_length=512, f0_min=50, f0_max=1100, dtype=torch.float32, device=None, sampling_rate=44100,
                  threshold=0.05):
-        self.fcpe = static_fcpe
+        self.fcpe = f0_predictor
         self.hop_length = hop_length
         self.f0_min = f0_min
         self.f0_max = f0_max

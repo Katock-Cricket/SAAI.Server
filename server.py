@@ -120,7 +120,7 @@ async def generate_audio_main(content, speaker, cn) -> str:
     speaker = speaker.lower()
     print("content: ", content, "speaker: ", speaker)
     tts_audio_path = await tts_fn(content, cn)
-    utils.cut_silence(tts_audio_path)
+    # utils.cut_silence(tts_audio_path) // needs ffmpeg, doesn't work on all PCs
     svc_audio = svc_fn(tts_audio_path, speaker)
     save_path, wavNumber = audioPathCalculator.calc_save_path()
     soundfile.write(save_path, svc_audio, sampling_rate, format="wav")

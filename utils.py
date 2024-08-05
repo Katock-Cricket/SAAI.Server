@@ -8,7 +8,6 @@ import subprocess
 import sys
 import traceback
 from multiprocessing import cpu_count
-from pydub import AudioSegment, silence
 
 import faiss
 import librosa
@@ -17,6 +16,7 @@ import torch
 from scipy.io.wavfile import read
 from sklearn.cluster import MiniBatchKMeans
 from torch.nn import functional as F
+from pydub_custom import AudioSegment, silence
 
 MATPLOTLIB_FLAG = False
 

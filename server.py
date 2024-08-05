@@ -1,25 +1,20 @@
 import asyncio
 import os
+import queue
 import re
-import shutil
 import socket
 import tempfile
-import time
 import threading
-import queue
-import sys
+import time
 
-import torch
-import librosa
-import soundfile
 import edge_tts
-from pydub import AudioSegment, silence
+import soundfile
+import torch
+from fairseq import checkpoint_utils
 
 import utils
 from inference.infer_tool import Svc
-from fairseq import checkpoint_utils
 from modules.F0Predictor.fcpe.model import FCPEInfer
-
 
 print("This is the tts-svc backend server for GTASA")
 print("AI audio generation program")

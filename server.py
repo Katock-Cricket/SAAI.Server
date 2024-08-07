@@ -35,29 +35,49 @@ hubert_dict = {
 static_fcpe = FCPEInfer(model_path="./SAAI.Server/pretrain/fcpe.pt", device="cpu", dtype=torch.float32)
 print("preload fcpe")
 
-vc_transform_map = {
+vc_transform_cn_map = {
     "carl": 3,
     "ryder": 0,
     "sweet": 3,
     "smoke": 0,
 }
 
-tts_voice_map = {
+tts_voice_cn_map = {
     "carl": "zh-CN-YunxiNeural",
     "smoke": "zh-CN-liaoning-XiaobeiNeural",
     "sweet": "zh-CN-YunxiNeural",
     "ryder": "zh-CN-shaanxi-XiaoniNeural"
 }
 
-tts_speed_map = {
+tts_speed_cn_map = {
     "carl": 0,
     "ryder": 5,
     "sweet": 0,
     "smoke": 5,
 }
 
+vc_transform_en_map = {
+    "carl": 5,
+    "ryder": 0,
+    "sweet": 4,
+    "smoke": 1,
+}
+
+tts_voice_en_map = {
+    "carl": "en-US-AndrewMultilingualNeural",
+    "smoke": "en-US-GuyNeural",
+    "sweet": "en-US-RogerNeural",
+    "ryder": "en-HK-SamNeural"
+}
+
+tts_speed_en_map = {
+    "carl": 0,
+    "ryder": 0,
+    "sweet": 0,
+    "smoke": 0,
+}
+
 tts_voice_en = "km-KH-PisethNeural"
-tts_voice_cn = "zh-CN-YunxiNeural"
 
 
 class AudioPathCalculator:
@@ -93,11 +113,11 @@ class AudioPathCalculator:
 audioPathCalculator = AudioPathCalculator()
 
 
-def svc_fn(raw_audio_path, speaker):
+def svc_fn(raw_audio_path, cn, speaker):
     if raw_audio_path is None:
         return None
 
-    vc_transform = vc_transform_map[speaker]
+    vc_transform = vc_transform_cn_map[speaker] if cn else vc_transform_en_map[speaker]
     model = svc_models[speaker]
 
     model.hubert_model = hubert_dict[model.speech_encoder]
@@ -117,10 +137,10 @@ def svc_fn(raw_audio_path, speaker):
 
 async def tts_fn(input_text, cn, spk):
     input_text = re.sub(r"[\n\,\(\) ]", "", input_text)
-    voice = tts_voice_map[spk] if cn else tts_voice_en
-    tts_rate = tts_speed_map[spk]
-    ratestr = f"{tts_rate:+d}%"
-    communicate = edge_tts.Communicate(text=input_text, voice=voice, rate=ratestr)
+    voice = tts_voice_cn_map[spk] if cn else tts_voice_en_map[spk]
+    tts_rate = tts_speed_cn_map[spk] if cn else tts_speed_en_map[spk]
+    rate = f"{tts_rate:+d}%"
+    communicate = edge_tts.Communicate(text=input_text, voice=voice, rate=rate)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
         temp_path = tmp_file.name
     await communicate.save(temp_path)
@@ -132,11 +152,12 @@ async def generate_audio_main(content, speaker, cn) -> str:
     print("content: ", content, "speaker: ", speaker)
     start = time.time()
     tts_audio_path = await tts_fn(content, cn, speaker)
-    utils.cut_silence(tts_audio_path)  # needs ffmpeg, doesn't work on all PCs
+    if cn:
+        utils.cut_silence(tts_audio_path)  # needs ffmpeg, doesn't work on all PCs
     end = time.time()
     print("[TTS] cost ", f"{(end - start):.3f}", " seconds", "\n")
     start = time.time()
-    svc_audio = svc_fn(tts_audio_path, speaker)
+    svc_audio = svc_fn(tts_audio_path, cn, speaker)
     save_path, wavNumber = audioPathCalculator.calc_save_path()
     soundfile.write(save_path, svc_audio, sampling_rate, format="wav")
     utils.normalize(save_path)

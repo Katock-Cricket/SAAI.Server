@@ -37,13 +37,27 @@ print("preload fcpe")
 
 vc_transform_map = {
     "carl": 3,
-    "ryder": 3,
-    "sweet": 2,
-    "smoke": 3
+    "ryder": 0,
+    "sweet": 3,
+    "smoke": 0,
 }
+
+tts_voice_map = {
+    "carl": "zh-CN-YunxiNeural",
+    "smoke": "zh-CN-liaoning-XiaobeiNeural",
+    "sweet": "zh-CN-YunxiNeural",
+    "ryder": "zh-CN-shaanxi-XiaoniNeural"
+}
+
+tts_speed_map = {
+    "carl": 0,
+    "ryder": 5,
+    "sweet": 0,
+    "smoke": 5,
+}
+
 tts_voice_en = "km-KH-PisethNeural"
 tts_voice_cn = "zh-CN-YunxiNeural"
-tts_rate = 0
 
 
 class AudioPathCalculator:
@@ -101,10 +115,11 @@ def svc_fn(raw_audio_path, speaker):
     return out_audio
 
 
-async def tts_fn(input_text, cn):
+async def tts_fn(input_text, cn, spk):
     input_text = re.sub(r"[\n\,\(\) ]", "", input_text)
-    voice = tts_voice_cn if cn else tts_voice_en
-    ratestr = "+{:.0%}".format(tts_rate) if tts_rate >= 0 else "{:.0%}".format(tts_rate)
+    voice = tts_voice_map[spk] if cn else tts_voice_en
+    tts_rate = tts_speed_map[spk]
+    ratestr = f"{tts_rate:+d}%"
     communicate = edge_tts.Communicate(text=input_text, voice=voice, rate=ratestr)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
         temp_path = tmp_file.name
@@ -115,12 +130,18 @@ async def tts_fn(input_text, cn):
 async def generate_audio_main(content, speaker, cn) -> str:
     speaker = speaker.lower()
     print("content: ", content, "speaker: ", speaker)
-    tts_audio_path = await tts_fn(content, cn)
+    start = time.time()
+    tts_audio_path = await tts_fn(content, cn, speaker)
     utils.cut_silence(tts_audio_path)  # needs ffmpeg, doesn't work on all PCs
+    end = time.time()
+    print("[TTS] cost ", f"{(end - start):.3f}", " seconds", "\n")
+    start = time.time()
     svc_audio = svc_fn(tts_audio_path, speaker)
     save_path, wavNumber = audioPathCalculator.calc_save_path()
     soundfile.write(save_path, svc_audio, sampling_rate, format="wav")
     utils.normalize(save_path)
+    end = time.time()
+    print("[SVC] cost ", f"{(end - start):.3f}", " seconds", "\n")
     return audioPathCalculator.default_pakName + ";" + audioPathCalculator.default_bankNumber + ";" + wavNumber
 
 
@@ -136,11 +157,8 @@ async def process_request(request_queue):
         if message:
             try:
                 content, speaker, cn = message.split(';', 2)
-                start = time.time()
                 cn = True if cn == "cn" else False
                 gen_audio_path = await generate_audio_main(content, speaker, cn)
-                end = time.time()
-                print("cost ", f"{(end - start):.3f}", " seconds", "\n")
                 conn.send(gen_audio_path.encode())
             except RuntimeError as e:
                 print(e, conn)

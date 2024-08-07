@@ -120,7 +120,6 @@ def svc_fn(raw_audio_path, cn, speaker):
     vc_transform = vc_transform_cn_map[speaker] if cn else vc_transform_en_map[speaker]
     model = svc_models[speaker]
 
-    model.hubert_model = hubert_dict[model.speech_encoder]
     out_audio = model.slice_inference(raw_audio_path=raw_audio_path,
                                       spk=speaker,
                                       slice_db=-40,
@@ -135,10 +134,38 @@ def svc_fn(raw_audio_path, cn, speaker):
     return out_audio
 
 
+def get_accent():
+    try:
+        with open('./scripts/SAAI.ini', 'r', encoding='utf-8') as file:
+            for line in file:
+                line = line.strip()
+                if line.startswith('#'):
+                    continue
+                if 'accent =' in line:
+                    parts = line.split('=')
+                    if len(parts) == 2:
+                        value = parts[1].strip()
+                        if value == '0' or value == ' 0':
+                            return True
+                        elif value == '1' or value == ' 1':
+                            return False
+        return True
+    except RuntimeError as e:
+        return True
+
+
+accent = get_accent()
+
+
 async def tts_fn(input_text, cn, spk):
     input_text = re.sub(r"[\n\,\(\) ]", "", input_text)
-    voice = tts_voice_cn_map[spk] if cn else tts_voice_en_map[spk]
-    tts_rate = tts_speed_cn_map[spk] if cn else tts_speed_en_map[spk]
+    if accent:
+        voice = tts_voice_cn_map[spk] if cn else tts_voice_en_map[spk]
+        tts_rate = tts_speed_cn_map[spk] if cn else tts_speed_en_map[spk]
+    else:
+        voice = tts_voice_cn_map['carl'] if cn else tts_voice_en_map['carl']
+        tts_rate = tts_speed_cn_map['carl'] if cn else tts_speed_en_map['carl']
+
     rate = f"{tts_rate:+d}%"
     communicate = edge_tts.Communicate(text=input_text, voice=voice, rate=rate)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
@@ -169,7 +196,17 @@ async def generate_audio_main(content, speaker, cn) -> str:
 def preload_svc_model():
     for f in os.listdir("./SAAI.Server/models"):
         model = Svc(fr"./SAAI.Server/models/{f}/{f}.pth", f"./SAAI.Server/models/{f}/config_{f}.json", "cpu")
+        model.hubert_model = hubert_dict[model.speech_encoder]
         svc_models[f] = model
+        svc_models[f].slice_inference(raw_audio_path="./SAAI.Server/preload.wav",
+                              spk=f,
+                              slice_db=-40,
+                              cluster_infer_ratio=0,
+                              noice_scale=0.4,
+                              clip_seconds=10,
+                              tran=0,
+                              f0_predictor=static_fcpe,
+                              auto_predict_f0=False)
 
 
 async def process_request(request_queue):

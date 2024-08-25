@@ -1,0 +1,38 @@
+{
+  "vc_transform_cn_map": {
+    "carl": 3,
+    "ryder": 3,
+    "sweet": 3,
+    "smoke": 4
+  },
+  "tts_voice_cn_map": {
+    "carl": "zh-CN-YunxiNeural",
+    "smoke": "zh-CN-liaoning-XiaobeiNeural",
+    "sweet": "zh-CN-YunxiNeural",
+    "ryder": "zh-CN-shaanxi-XiaoniNeural"
+  },
+  "tts_speed_cn_map": {
+    "carl": 0,
+    "ryder": 5,
+    "sweet": 0,
+    "smoke": 5
+  },
+  "vc_transform_en_map": {
+    "carl": 7,
+    "ryder": 0,
+    "sweet": 4,
+    "smoke": 1
+  },
+  "tts_voice_en_map": {
+    "carl": "en-US-AndrewMultilingualNeural",
+    "smoke": "en-US-GuyNeural",
+    "sweet": "en-US-RogerNeural",
+    "ryder": "en-HK-SamNeural"
+  },
+  "tts_speed_en_map": {
+    "carl": 0,
+    "ryder": 0,
+    "sweet": 0,
+    "smoke": 0
+  }
+}

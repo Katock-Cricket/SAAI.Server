@@ -16,7 +16,7 @@ import torch
 from scipy.io.wavfile import read
 from sklearn.cluster import MiniBatchKMeans
 from torch.nn import functional as F
-from pydub_custom import AudioSegment, silence
+from svc.pydub_custom import AudioSegment, silence
 
 MATPLOTLIB_FLAG = False
 
@@ -113,7 +113,7 @@ def get_content(cmodel, y):
 
 
 def get_f0_predictor(f0_predictor, hop_length, sampling_rate, **kargs):
-    from modules.F0Predictor.FCPEF0Predictor import FCPEF0Predictor
+    from svc.modules.F0Predictor.FCPEF0Predictor import FCPEF0Predictor
     f0_predictor_object = FCPEF0Predictor(f0_predictor=f0_predictor, hop_length=hop_length, sampling_rate=sampling_rate, dtype=torch.float32,
                                           device=kargs["device"], threshold=kargs["threshold"])
     return f0_predictor_object
@@ -121,44 +121,11 @@ def get_f0_predictor(f0_predictor, hop_length, sampling_rate, **kargs):
 
 def get_speech_encoder(speech_encoder, device, models, saved_cfg, task, **kargs):
     if speech_encoder == "vec768l12":
-        from vencoder.ContentVec768L12 import ContentVec768L12
+        from svc.vencoder.ContentVec768L12 import ContentVec768L12
         speech_encoder_object = ContentVec768L12(models, saved_cfg, task)
     elif speech_encoder == "vec256l9":
-        from vencoder.ContentVec256L9 import ContentVec256L9
+        from svc.vencoder.ContentVec256L9 import ContentVec256L9
         speech_encoder_object = ContentVec256L9(models, saved_cfg, task)
-    elif speech_encoder == "vec256l9-onnx":
-        from vencoder.ContentVec256L9_Onnx import ContentVec256L9_Onnx
-        speech_encoder_object = ContentVec256L9_Onnx(device=device)
-    elif speech_encoder == "vec256l12-onnx":
-        from vencoder.ContentVec256L12_Onnx import ContentVec256L12_Onnx
-        speech_encoder_object = ContentVec256L12_Onnx(device=device)
-    elif speech_encoder == "vec768l9-onnx":
-        from vencoder.ContentVec768L9_Onnx import ContentVec768L9_Onnx
-        speech_encoder_object = ContentVec768L9_Onnx(device=device)
-    elif speech_encoder == "vec768l12-onnx":
-        from vencoder.ContentVec768L12_Onnx import ContentVec768L12_Onnx
-        speech_encoder_object = ContentVec768L12_Onnx(device=device)
-    elif speech_encoder == "hubertsoft-onnx":
-        from vencoder.HubertSoft_Onnx import HubertSoft_Onnx
-        speech_encoder_object = HubertSoft_Onnx(device=device)
-    elif speech_encoder == "hubertsoft":
-        from vencoder.HubertSoft import HubertSoft
-        speech_encoder_object = HubertSoft(device=device)
-    elif speech_encoder == "whisper-ppg":
-        from vencoder.WhisperPPG import WhisperPPG
-        speech_encoder_object = WhisperPPG(device=device)
-    elif speech_encoder == "cnhubertlarge":
-        from vencoder.CNHubertLarge import CNHubertLarge
-        speech_encoder_object = CNHubertLarge(device=device)
-    elif speech_encoder == "dphubert":
-        from vencoder.DPHubert import DPHubert
-        speech_encoder_object = DPHubert(device=device)
-    elif speech_encoder == "whisper-ppg-large":
-        from vencoder.WhisperPPGLarge import WhisperPPGLarge
-        speech_encoder_object = WhisperPPGLarge(device=device)
-    elif speech_encoder == "wavlmbase+":
-        from vencoder.WavLMBasePlus import WavLMBasePlus
-        speech_encoder_object = WavLMBasePlus(device=device)
     else:
         raise Exception("Unknown speech encoder")
     return speech_encoder_object
